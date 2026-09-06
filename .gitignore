@@ -7,12 +7,21 @@ __pycache__/
 .venv/
 venv/
 env/
+backend/venv/
+
+# =========================
+# Python tooling
+# =========================
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
 
 # =========================
 # Large raw datasets
 # =========================
 data/raw/ibtracs/
 data/raw/satellite/
+data/raw/
 
 # =========================
 # Generated / processed data
@@ -40,14 +49,19 @@ data/processed/dataset/
 # =========================
 # ML outputs / checkpoints
 # =========================
-*.keras
 checkpoints/
 logs/
+*.keras
+
+# Keep deployment model
+!backend/model/cyclone_intensity_model.keras
 
 # =========================
 # Frontend
 # =========================
 node_modules/
+frontend/node_modules/
+frontend/.vite/
 .next/
 out/
 dist/
@@ -58,6 +72,18 @@ dist/
 .env
 .env.*
 !.env.example
+
+# =========================
+# Databases
+# =========================
+*.db
+*.sqlite
+*.sqlite3
+
+# =========================
+# Logs
+# =========================
+*.log
 
 # =========================
 # OS / IDE
