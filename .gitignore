@@ -1,1 +1,80 @@
-data/raw/ibtracs/ibtracs.ALL.list.v04r01.csv
+# =========================
+# Python
+# =========================
+__pycache__/
+*.py[cod]
+*.pyo
+.venv/
+venv/
+env/
+
+# =========================
+# Large raw datasets
+# =========================
+data/raw/ibtracs/
+data/raw/satellite/
+
+# =========================
+# Generated / processed data
+# =========================
+data/processed/arrays/
+data/processed/images/
+data/processed/dataset/
+
+# Large scientific files
+*.nc
+*.nc4
+*.h5
+*.hdf5
+*.npy
+*.npz
+
+# =========================
+# Large archives
+# =========================
+*.zip
+*.7z
+*.tar
+*.gz
+
+# =========================
+# ML outputs / checkpoints
+# =========================
+*.keras
+checkpoints/
+logs/
+
+# =========================
+# Frontend
+# =========================
+node_modules/
+.next/
+out/
+dist/
+
+# =========================
+# Environment / secrets
+# =========================
+.env
+.env.*
+!.env.example
+
+# =========================
+# OS / IDE
+# =========================
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+
+# =========================
+# Keep important project files
+# =========================
+!README.md
+!src/
+!backend/
+!frontend/
+!training/
+
+# Local Git backup
+.git_backup_before_cleanup/
