@@ -48,6 +48,8 @@ class PredictionResponse(BaseModel):
     data_quality: DataQuality
     processing: ProcessingInformation
     prototype: PrototypeInformation
+    satellite_image_base64: Optional[str] = None
+    satellite_image_gray_base64: Optional[str] = None
 
 
 class PredictionHistoryItem(BaseModel):

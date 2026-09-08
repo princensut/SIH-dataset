@@ -1,0 +1,14 @@
+fastapi
+uvicorn[standard]
+python-multipart
+tensorflow
+numpy
+xarray
+netCDF4
+Pillow
+pandas
+scikit-learn
+matplotlib
+httpx
+pytest
+h5netcdf

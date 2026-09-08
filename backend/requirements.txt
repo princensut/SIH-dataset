@@ -5,4 +5,4 @@ tensorflow
 numpy
 xarray
 netCDF4
-Pillow
+Pillowh5netcdf

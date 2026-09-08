@@ -1,4 +1,11 @@
+import sys
 from pathlib import Path
+
+# Ensure backend directory is in sys.path when running from outside backend/
+_backend_dir = str(Path(__file__).resolve().parent)
+if _backend_dir not in sys.path:
+    sys.path.insert(0, _backend_dir)
+
 from time import perf_counter
 from uuid import uuid4
 from typing import List
@@ -506,6 +513,62 @@ def run_model_prediction(X):
     )
 
 
+
+def render_satellite_visuals(tb_array: np.ndarray):
+    """
+    Renders the scientific NetCDF 2D Brightness Temperature matrix into:
+    1. Thermal IR Heatmap (Meteorological Inferno Colormap)
+    2. Raw Grayscale Infrared satellite view
+    Returns base64 data URLs.
+    """
+    try:
+        import io
+        import base64
+        from PIL import Image
+        import matplotlib.cm as cm
+
+        if hasattr(tb_array, 'mask'):
+            data = tb_array.astype(float)
+            data[tb_array.mask] = np.nan
+        else:
+            data = tb_array.astype(float)
+
+        valid_mask = ~np.isnan(data)
+        if not np.any(valid_mask):
+            return None, None
+
+        t_min = float(np.nanmin(data))
+        t_max = float(np.nanmax(data))
+        if t_max <= t_min:
+            t_max = t_min + 1.0
+
+        # Invert so cold deep convective storm cloud tops are bright / intense
+        norm = np.clip((data - t_min) / (t_max - t_min), 0.0, 1.0)
+        norm_inv = 1.0 - norm
+        norm_inv[~valid_mask] = 0.0
+
+        # 1. Thermal Infrared Colormap (Inferno)
+        rgba_thermal = cm.inferno(norm_inv)
+        rgba_thermal[~valid_mask] = [0, 0, 0, 1]  # Black for missing pixels
+        img_thermal = Image.fromarray((rgba_thermal * 255).astype(np.uint8))
+        buf_thermal = io.BytesIO()
+        img_thermal.save(buf_thermal, format='PNG')
+        b64_thermal = f"data:image/png;base64,{base64.b64encode(buf_thermal.getvalue()).decode('ascii')}"
+
+        # 2. Raw Grayscale IR
+        gray_u8 = (norm_inv * 255).astype(np.uint8)
+        gray_u8[~valid_mask] = 0
+        img_gray = Image.fromarray(gray_u8, mode='L')
+        buf_gray = io.BytesIO()
+        img_gray.save(buf_gray, format='PNG')
+        b64_gray = f"data:image/png;base64,{base64.b64encode(buf_gray.getvalue()).decode('ascii')}"
+
+        return b64_thermal, b64_gray
+    except Exception as e:
+        print("Satellite visualization error:", e)
+        return None, None
+
+
 # ============================================================
 # HELPER: PROCESS ONE FILE
 # ============================================================
@@ -541,6 +604,10 @@ async def process_prediction_file(
         )
 
         X = preprocess_tb(
+            tb
+        )
+
+        satellite_thermal_b64, satellite_gray_b64 = render_satellite_visuals(
             tb
         )
 
@@ -818,6 +885,10 @@ async def process_prediction_file(
                 "be treated as an operational forecast."
             ),
         },
+
+        "satellite_image_base64": satellite_thermal_b64,
+
+        "satellite_image_gray_base64": satellite_gray_b64,
     }
 
 
