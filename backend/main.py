@@ -262,6 +262,24 @@ def health():
 
 
 # ============================================================
+# KEEP-ALIVE PING (for Render cron job)
+# ============================================================
+
+@app.get("/ping")
+def ping():
+    """
+    Lightweight endpoint hit by Render's cron job every
+    14 minutes to prevent the free-tier service from
+    spinning down due to inactivity.
+    """
+
+    return {
+        "pong": True,
+        "model_loaded": model is not None,
+    }
+
+
+# ============================================================
 # MODEL INFORMATION
 # ============================================================
 
@@ -808,6 +826,26 @@ async def process_prediction_file(
                 input_metadata[
                     "long_name"
                 ]
+            ),
+
+            "cyclone_name": input_metadata.get(
+                "cyclone_name"
+            ),
+
+            "cyclone_id": input_metadata.get(
+                "cyclone_id"
+            ),
+
+            "cyclone_latitude": input_metadata.get(
+                "cyclone_latitude"
+            ),
+
+            "cyclone_longitude": input_metadata.get(
+                "cyclone_longitude"
+            ),
+
+            "observation_time": input_metadata.get(
+                "observation_time"
             ),
         },
 

@@ -132,10 +132,10 @@ export function FileUpload({ onAnalyze, loading }: FileUploadProps) {
         id: "demo-load",
         description: "Ready for deep learning CNN inference.",
       });
-    } catch (err: any) {
+    } catch (err: unknown) {
       toast.error("Observation Load Failed", {
         id: "demo-load",
-        description: err.message || "Failed to fetch sample NetCDF.",
+        description: err instanceof Error ? err.message : "Failed to fetch sample NetCDF.",
       });
     }
   };

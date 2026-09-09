@@ -363,7 +363,7 @@ export function EarthGlobe({ onSelectCyclone, selectedCycloneId }: EarthGlobePro
     // Mouse Interaction (Drag to Rotate)
     let isDragging = false;
     let previousMousePosition = { x: 0, y: 0 };
-    let dragVelocity = { x: 0, y: 0 };
+    const dragVelocity = { x: 0, y: 0 };
 
     const onMouseDown = (e: MouseEvent) => {
       isDragging = true;

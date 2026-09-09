@@ -1,7 +1,7 @@
 import io
 
 import numpy as np
-import xarray as xr
+import xarray as xr  # type: ignore
 from PIL import Image
 
 
@@ -110,6 +110,28 @@ def load_tb_from_netcdf(file_bytes):
                 "long_name"
             )
 
+            # Extract genuine cyclone & observation metadata if present
+            cyclone_name = variable.attrs.get("cyclone_name") or ds.attrs.get("cyclone_name")
+            cyclone_id = variable.attrs.get("cyclone_id") or ds.attrs.get("cyclone_id")
+            cyclone_lat = variable.attrs.get("cyclone_latitude") or ds.attrs.get("cyclone_latitude")
+            cyclone_lon = variable.attrs.get("cyclone_longitude") or ds.attrs.get("cyclone_longitude")
+            observation_time = variable.attrs.get("ibtracs_time") or ds.attrs.get("time")
+
+            if cyclone_lat is not None:
+                try:
+                    cyclone_lat = round(float(cyclone_lat), 2)
+                except Exception:
+                    cyclone_lat = None
+
+            if cyclone_lon is not None:
+                try:
+                    cyclone_lon = round(float(cyclone_lon), 2)
+                except Exception:
+                    cyclone_lon = None
+
+            if observation_time is not None:
+                observation_time = str(observation_time).strip()
+
     except Exception as e:
 
         raise ValueError(
@@ -154,6 +176,24 @@ def load_tb_from_netcdf(file_bytes):
             if long_name is not None
             else None
         ),
+
+        "cyclone_name": (
+            str(cyclone_name)
+            if cyclone_name is not None
+            else None
+        ),
+
+        "cyclone_id": (
+            str(cyclone_id)
+            if cyclone_id is not None
+            else None
+        ),
+
+        "cyclone_latitude": cyclone_lat,
+
+        "cyclone_longitude": cyclone_lon,
+
+        "observation_time": observation_time,
     }
 
     return tb, metadata

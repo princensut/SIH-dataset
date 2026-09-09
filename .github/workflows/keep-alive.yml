@@ -1,0 +1,22 @@
+name: Keep Render Backend Alive
+
+on:
+  schedule:
+    # Runs every 14 minutes to prevent Render free-tier spin down
+    - cron: '*/14 * * * *'
+  workflow_dispatch: # Allows manual trigger from GitHub Actions tab
+
+jobs:
+  ping:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Ping CycloneAI Backend
+        run: |
+          BACKEND_URL="${{ secrets.BACKEND_URL }}"
+          if [ -z "$BACKEND_URL" ]; then
+            # Default placeholder or fallback if secret is not set yet
+            echo "BACKEND_URL secret is not set yet. Please add BACKEND_URL in Repo Settings -> Secrets."
+            exit 0
+          fi
+          echo "Pinging $BACKEND_URL/ping..."
+          curl -fsS "$BACKEND_URL/ping" || echo "Ping failed or server is waking up"

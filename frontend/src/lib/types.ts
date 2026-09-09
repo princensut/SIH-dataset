@@ -12,6 +12,11 @@ export interface InputInformation {
   dimensions: Record<string, number>;
   units?: string | null;
   long_name?: string | null;
+  cyclone_name?: string | null;
+  cyclone_id?: string | null;
+  cyclone_latitude?: number | null;
+  cyclone_longitude?: number | null;
+  observation_time?: string | null;
 }
 
 export interface DataQuality {

@@ -37,21 +37,22 @@ export function SatelliteShowcaseEarth({ dimmed = false }: SatelliteShowcaseEart
         }`}
       />
 
-      {/* Dynamic dimming and blur backdrop overlay when showing data */}
+      {/* Dynamic dimming and mobile backdrop overlay */}
       <div
         className={`absolute inset-0 transition-all duration-700 pointer-events-none ${
-          dimmed ? "bg-black/55 backdrop-blur-xs" : "bg-transparent backdrop-blur-0"
+          dimmed ? "bg-black/70 backdrop-blur-xs" : "bg-black/40 lg:bg-transparent backdrop-blur-0"
         }`}
       />
 
-      {/* Smooth shadow fade strictly covering the 30-40% region from the left (always active) */}
+      {/* Smooth shadow fade covering the left region on desktop and tinted on mobile */}
       <div
-        className="absolute inset-0 pointer-events-none z-1"
+        className="absolute inset-0 pointer-events-none z-1 hidden lg:block"
         style={{
           background:
             "linear-gradient(to right, #000000 0%, #000000 24%, rgba(0,0,0,0.85) 30%, rgba(0,0,0,0.40) 35%, transparent 39%)",
         }}
       />
+      <div className="absolute inset-0 pointer-events-none z-1 lg:hidden bg-gradient-to-b from-black/80 via-black/50 to-black/90" />
 
       {/* Smooth top and bottom dissolves */}
       <div className="absolute top-0 inset-x-0 h-24 bg-linear-to-b from-black via-black/80 to-transparent pointer-events-none z-1" />

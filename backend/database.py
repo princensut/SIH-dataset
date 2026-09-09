@@ -6,10 +6,16 @@ from datetime import datetime, timezone
 # ============================================================
 # DATABASE CONFIGURATION
 # ============================================================
+import os
 
 BASE_DIR = Path(__file__).resolve().parent
 
-DATABASE_PATH = BASE_DIR / "cyclone_predictions.db"
+# On Render's free tier the filesystem (except /tmp) is read-only,
+# so we place the SQLite DB in /tmp. Locally we use the project dir.
+if os.environ.get("RENDER"):
+    DATABASE_PATH = Path("/tmp") / "cyclone_predictions.db"
+else:
+    DATABASE_PATH = BASE_DIR / "cyclone_predictions.db"
 
 
 # ============================================================

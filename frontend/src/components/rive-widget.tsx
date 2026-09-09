@@ -1,18 +1,18 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useSyncExternalStore } from "react";
 import { useRive } from "@rive-app/react-canvas";
-import { Activity, Radio } from "lucide-react";
+import { Radio } from "lucide-react";
 
 export function RiveSatelliteWidget() {
-  const [mounted, setMounted] = useState(false);
+  const mounted = useSyncExternalStore(
+    () => () => {},
+    () => true,
+    () => false
+  );
   const [hasError, setHasError] = useState(false);
 
-  useEffect(() => {
-    setMounted(true);
-  }, []);
-
-  const { rive, RiveComponent } = useRive({
+  const { RiveComponent } = useRive({
     src: "/radar.riv",
     autoplay: true,
     onLoadError: () => setHasError(true),

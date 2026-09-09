@@ -16,6 +16,11 @@ class InputInformation(BaseModel):
     dimensions: dict
     units: Optional[str] = None
     long_name: Optional[str] = None
+    cyclone_name: Optional[str] = None
+    cyclone_id: Optional[str] = None
+    cyclone_latitude: Optional[float] = None
+    cyclone_longitude: Optional[float] = None
+    observation_time: Optional[str] = None
 
 
 class DataQuality(BaseModel):

@@ -1,0 +1,31 @@
+# Render Blueprint — one-click deploy for CycloneAI Backend
+# https://render.com/docs/blueprint-spec
+
+services:
+  - type: web
+    name: cycloneai-backend
+    runtime: python
+    plan: free
+    buildCommand: pip install -r requirements.txt
+    startCommand: uvicorn main:app --host 0.0.0.0 --port $PORT
+    rootDir: backend
+    envVars:
+      - key: PYTHON_VERSION
+        value: "3.11.9"
+      - key: TF_CPP_MIN_LOG_LEVEL
+        value: "2"
+    healthCheckPath: /health
+    autoDeploy: true
+
+  # Keep-alive Cron Job on Render
+  # NOTE: Render requires a Starter plan ($1/mo minimum) for cron services.
+  # If you're on Render's 100% Free plan, use the included GitHub Actions workflow
+  # (.github/workflows/keep-alive.yml) or cron-job.org to ping /ping for free.
+  - type: cron
+    name: cycloneai-keepalive
+    schedule: "*/14 * * * *"
+    runtime: python
+    buildCommand: echo "no build needed"
+    startCommand: python -c "import urllib.request, os; host = os.environ.get('RENDER_EXTERNAL_HOSTNAME', 'cycloneai-backend.onrender.com'); urllib.request.urlopen(f'https://{host}/ping')"
+    plan: starter
+    rootDir: backend
