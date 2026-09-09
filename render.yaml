@@ -17,15 +17,18 @@ services:
     healthCheckPath: /health
     autoDeploy: true
 
-  # Keep-alive Cron Job on Render
-  # NOTE: Render requires a Starter plan ($1/mo minimum) for cron services.
-  # If you're on Render's 100% Free plan, use the included GitHub Actions workflow
-  # (.github/workflows/keep-alive.yml) or cron-job.org to ping /ping for free.
-  - type: cron
-    name: cycloneai-keepalive
-    schedule: "*/14 * * * *"
-    runtime: python
-    buildCommand: echo "no build needed"
-    startCommand: python -c "import urllib.request, os; host = os.environ.get('RENDER_EXTERNAL_HOSTNAME', 'cycloneai-backend.onrender.com'); urllib.request.urlopen(f'https://{host}/ping')"
-    plan: starter
-    rootDir: backend
+  # ============================================================
+  # NOTE: Keep-alive cron on Render requires a paid Starter plan
+  # ($1/mo). To keep the backend 100% FREE with NO credit card,
+  # the keep-alive ping is handled automatically by the included
+  # GitHub Actions workflow in .github/workflows/keep-alive.yml!
+  # If you have a paid Render plan, uncomment the block below:
+  # ============================================================
+  # - type: cron
+  #   name: cycloneai-keepalive
+  #   schedule: "*/14 * * * *"
+  #   runtime: python
+  #   buildCommand: echo "no build needed"
+  #   startCommand: python -c "import urllib.request, os; host = os.environ.get('RENDER_EXTERNAL_HOSTNAME', 'cycloneai-backend.onrender.com'); urllib.request.urlopen(f'https://{host}/ping')"
+  #   plan: starter
+  #   rootDir: backend
