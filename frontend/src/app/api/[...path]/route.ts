@@ -60,23 +60,28 @@ async function handler(
   try {
     const backendRes = await fetch(url.toString(), fetchOptions);
 
-    // Stream the response back
+    // Build response headers, excluding hop-by-hop and encoding headers
+    // (fetch automatically decompresses the body, so forwarding content-encoding causes ERR_CONTENT_DECODING_FAILED)
     const responseHeaders = new Headers();
+    const skippedHeaders = [
+      "content-encoding",
+      "content-length",
+      "transfer-encoding",
+      "connection",
+      "keep-alive",
+    ];
+
     backendRes.headers.forEach((value, key) => {
-      // Skip hop-by-hop headers
-      if (
-        !["transfer-encoding", "connection", "keep-alive"].includes(
-          key.toLowerCase()
-        )
-      ) {
+      if (!skippedHeaders.includes(key.toLowerCase())) {
         responseHeaders.set(key, value);
       }
     });
 
-    // Allow CORS from anywhere (the proxy itself handles auth)
     responseHeaders.set("Access-Control-Allow-Origin", "*");
 
-    return new NextResponse(backendRes.body, {
+    const bodyData = await backendRes.arrayBuffer();
+
+    return new NextResponse(bodyData, {
       status: backendRes.status,
       statusText: backendRes.statusText,
       headers: responseHeaders,

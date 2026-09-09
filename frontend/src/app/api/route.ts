@@ -37,19 +37,25 @@ async function handler(req: NextRequest) {
     const backendRes = await fetch(url.toString(), fetchOptions);
 
     const responseHeaders = new Headers();
+    const skippedHeaders = [
+      "content-encoding",
+      "content-length",
+      "transfer-encoding",
+      "connection",
+      "keep-alive",
+    ];
+
     backendRes.headers.forEach((value, key) => {
-      if (
-        !["transfer-encoding", "connection", "keep-alive"].includes(
-          key.toLowerCase()
-        )
-      ) {
+      if (!skippedHeaders.includes(key.toLowerCase())) {
         responseHeaders.set(key, value);
       }
     });
 
     responseHeaders.set("Access-Control-Allow-Origin", "*");
 
-    return new NextResponse(backendRes.body, {
+    const bodyData = await backendRes.arrayBuffer();
+
+    return new NextResponse(bodyData, {
       status: backendRes.status,
       statusText: backendRes.statusText,
       headers: responseHeaders,

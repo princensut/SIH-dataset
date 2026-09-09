@@ -37,6 +37,8 @@ data/processed/dataset/
 *.hdf5
 *.npy
 *.npz
+!frontend/public/*.nc
+!frontend/public/*.nc4
 
 # =========================
 # Large archives
