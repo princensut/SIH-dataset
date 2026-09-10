@@ -1,4 +1,4 @@
-<img width="1362" height="628" alt="image" src="https://github.com/user-attachments/assets/2bf3d83e-20a5-42ba-b272-9ada9b42a1c8" /># Cyclone Intensity Prediction
+Cyclone AI - Intensity Prediction
 
 ## 1. Project Information
 
