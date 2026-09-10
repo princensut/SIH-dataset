@@ -216,7 +216,7 @@ This project is distributed under the MIT license. See the repository LICENSE fi
   2. Lakshay dhall (https://www.github.com/lakshay2k6)
   3. Rishabh Gupta (https://www.github.com/rishicancode)
   4. Nidhi (https://www.github.com/thenidhz)
-  5. arshiya jain (https://www.github.com)
+  5. arshiya jain (https://www.github.com/arshiyajain13)
   6. Rohit dahiya (https://www.github.com/senkuthegreat)
 
 ## Languages
