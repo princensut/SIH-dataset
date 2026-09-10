@@ -4,9 +4,9 @@ Cyclone AI - Intensity Prediction
 
 - Project Title: Cyclone AI - Cyclone  Intensity Prediction
 - PS ID: SIH26070
-- PS Title: AI-powered tropical cyclone intensity estimation and disaster-risk assessment from satellite data
+- PS Title: To develop an Artificial Intelligence (AI) / Machine Learning (ML) based system for identification, classification, and                           prediction of different tropical cyclone patterns using multi-source satellite data.
 - Category: Software
-- Theme: Disaster Management / Climate Resilience
+- Theme: Disaster Management.
 
 ## Project Snapshot
 
