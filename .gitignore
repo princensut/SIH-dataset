@@ -39,6 +39,8 @@ data/processed/dataset/
 *.npz
 !frontend/public/*.nc
 !frontend/public/*.nc4
+!frontend/public/**/*.nc
+!frontend/public/**/*.nc4
 
 # =========================
 # Large archives

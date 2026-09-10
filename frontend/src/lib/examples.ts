@@ -1,0 +1,133 @@
+export interface ExampleObservation {
+  id: string;
+  name: string;
+  cyclone: string;
+  year: string;
+  timestamp: string;
+  filename: string;
+  path: string;
+  sizeKb: number;
+  expectedCategory: string;
+  expectedWindKt: number;
+  description: string;
+}
+
+export const EXAMPLE_OBSERVATIONS: ExampleObservation[] = [
+  {
+    id: "burevi-2020",
+    name: "Cyclone Burevi",
+    cyclone: "BUREVI",
+    year: "2020",
+    timestamp: "2020-11-29 18:00 UTC",
+    filename: "BUREVI_20201129_1800.nc",
+    path: "/examples/BUREVI_20201129_1800.nc",
+    sizeKb: 64.1,
+    expectedCategory: "Severe Cyclonic Storm",
+    expectedWindKt: 60.8,
+    description: "Southwest Bay of Bengal / Sri Lanka approach",
+  },
+  {
+    id: "yaas-2021-1",
+    name: "Cyclone Yaas (Early Track)",
+    cyclone: "YAAS",
+    year: "2021",
+    timestamp: "2021-05-23 12:00 UTC",
+    filename: "YAAS_20210523_1200.nc",
+    path: "/examples/YAAS_20210523_1200.nc",
+    sizeKb: 63.4,
+    expectedCategory: "Very Severe Cyclonic Storm",
+    expectedWindKt: 64.7,
+    description: "East central Bay of Bengal intensification stage",
+  },
+  {
+    id: "yaas-2021-2",
+    name: "Cyclone Yaas (Mid Track)",
+    cyclone: "YAAS",
+    year: "2021",
+    timestamp: "2021-05-23 18:00 UTC",
+    filename: "YAAS_20210523_1800.nc",
+    path: "/examples/YAAS_20210523_1800.nc",
+    sizeKb: 66.2,
+    expectedCategory: "Severe Cyclonic Storm",
+    expectedWindKt: 63.7,
+    description: "Dense central overcast consolidation",
+  },
+  {
+    id: "yaas-2021-3",
+    name: "Cyclone Yaas (Peak Track)",
+    cyclone: "YAAS",
+    year: "2021",
+    timestamp: "2021-05-24 00:00 UTC",
+    filename: "YAAS_20210524_0000.nc",
+    path: "/examples/YAAS_20210524_0000.nc",
+    sizeKb: 63.5,
+    expectedCategory: "Very Severe Cyclonic Storm",
+    expectedWindKt: 65.2,
+    description: "Northward propagation towards Odisha coast",
+  },
+  {
+    id: "sitrang-2022-1",
+    name: "Cyclone Sitrang (Early)",
+    cyclone: "SITRANG",
+    year: "2022",
+    timestamp: "2022-10-22 00:00 UTC",
+    filename: "sitrang_20221022_0000.nc",
+    path: "/examples/sitrang_20221022_0000.nc",
+    sizeKb: 65.9,
+    expectedCategory: "Severe Cyclonic Storm",
+    expectedWindKt: 62.3,
+    description: "Central Bay of Bengal precursor vortex",
+  },
+  {
+    id: "sitrang-2022-2",
+    name: "Cyclone Sitrang (Mid Track)",
+    cyclone: "SITRANG",
+    year: "2022",
+    timestamp: "2022-10-22 06:00 UTC",
+    filename: "sitrang_20221022_0600.nc",
+    path: "/examples/sitrang_20221022_0600.nc",
+    sizeKb: 67.3,
+    expectedCategory: "Severe Cyclonic Storm",
+    expectedWindKt: 63.0,
+    description: "Spiraling rainbands over northern Bay",
+  },
+  {
+    id: "sitrang-2022-3",
+    name: "Cyclone Sitrang (Late Track)",
+    cyclone: "SITRANG",
+    year: "2022",
+    timestamp: "2022-10-22 12:00 UTC",
+    filename: "sitrang_20221022_1200.nc",
+    path: "/examples/sitrang_20221022_1200.nc",
+    sizeKb: 66.9,
+    expectedCategory: "Severe Cyclonic Storm",
+    expectedWindKt: 63.5,
+    description: "Pre-landfall cyclonic vortex over Bangladesh",
+  },
+  {
+    id: "midhili-2023-1",
+    name: "Cyclone Midhili (T1)",
+    cyclone: "MIDHILI",
+    year: "2023",
+    timestamp: "2023-11-14 06:00 UTC",
+    filename: "midhili_20231114_0600.nc",
+    path: "/examples/midhili_20231114_0600.nc",
+    sizeKb: 71.8,
+    expectedCategory: "Severe Cyclonic Storm",
+    expectedWindKt: 62.5,
+    description: "Northwest Bay of Bengal rapid organization",
+  },
+  {
+    id: "midhili-2023-2",
+    name: "Cyclone Midhili (T2)",
+    cyclone: "MIDHILI",
+    year: "2023",
+    timestamp: "2023-11-14 12:00 UTC",
+    filename: "midhili_20231114_1200.nc",
+    path: "/examples/midhili_20231114_1200.nc",
+    sizeKb: 70.4,
+    expectedCategory: "Severe Cyclonic Storm",
+    expectedWindKt: 62.3,
+    description: "Deep convection eye-core signature",
+  },
+];

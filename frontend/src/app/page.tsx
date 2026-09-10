@@ -17,9 +17,13 @@ import {
   ChevronRight,
   Eye,
   Maximize2,
+  Sparkles,
+  Layers,
+  Play,
 } from "lucide-react";
 import { DissolvedNav } from "@/components/dissolved-nav";
 import { SatelliteShowcaseEarth } from "@/components/satellite-showcase-earth";
+import { ExamplesModal } from "@/components/examples-modal";
 import {
   fetchPredictionHistory,
   fetchSummary,
@@ -27,6 +31,10 @@ import {
   getCategoryMetadata,
   IMD_CATEGORIES,
 } from "@/lib/api";
+import {
+  EXAMPLE_OBSERVATIONS,
+  ExampleObservation,
+} from "@/lib/examples";
 import {
   PredictionHistoryItem,
   PredictionResponse,
@@ -40,6 +48,7 @@ export default function Page() {
   const [visualMode, setVisualMode] = useState<"thermal" | "grayscale">("thermal");
   const [isZoomModalOpen, setIsZoomModalOpen] = useState(false);
   const [isHistoryModalOpen, setIsHistoryModalOpen] = useState(false);
+  const [isExamplesModalOpen, setIsExamplesModalOpen] = useState(false);
   const [summary, setSummary] = useState<SummaryResponse | null>(null);
   const [history, setHistory] = useState<PredictionHistoryItem[]>([]);
   const [totalCount, setTotalCount] = useState(0);
@@ -147,40 +156,63 @@ export default function Page() {
     if (fileInputRef.current) fileInputRef.current.value = "";
   };
 
-  const handleLoadSample = useCallback(async (autoRun = true) => {
-    try {
-      toast.loading("Loading Cyclone Burevi sample...", { id: "sample" });
-      const res = await fetch("/BUREVI_20201129_1800.nc");
-      if (!res.ok) throw new Error("Could not fetch BUREVI_20201129_1800.nc sample file.");
-      const blob = await res.blob();
-      const sampleFile = new File([blob], "BUREVI_20201129_1800.nc", {
-        type: "application/x-netcdf",
-      });
-      validateAndSetFile(sampleFile);
-      toast.success("Cyclone Burevi sample staged (64.1 KB)", { id: "sample" });
-
-      if (autoRun) {
-        setLoading(true);
-        setError("");
-        try {
-          const data = await predictCycloneFile(sampleFile);
-          setPrediction(data);
-          await loadDashboard();
-          await loadHistory();
-          toast.success("Cyclone Burevi: 60.8 KT • Severe Cyclonic Storm", { id: "sample" });
-        } catch (err: unknown) {
-          setError(err instanceof Error ? err.message : "Prediction inference failed.");
-        } finally {
-          setLoading(false);
+  const handleLoadExample = useCallback(
+    async (example: ExampleObservation, autoRun = true) => {
+      try {
+        toast.loading(`Loading ${example.name}...`, { id: "sample" });
+        let res = await fetch(example.path);
+        if (!res.ok) {
+          res = await fetch(`/${example.filename}`);
         }
+        if (!res.ok) {
+          throw new Error(`Could not fetch ${example.filename} observation.`);
+        }
+        const blob = await res.blob();
+        const sampleFile = new File([blob], example.filename, {
+          type: "application/x-netcdf",
+        });
+        validateAndSetFile(sampleFile);
+        toast.success(`${example.name} staged (${example.sizeKb} KB)`, { id: "sample" });
+
+        if (autoRun) {
+          setLoading(true);
+          setError("");
+          try {
+            const data = await predictCycloneFile(sampleFile);
+            setPrediction(data);
+            await loadDashboard();
+            await loadHistory();
+            toast.success(
+              `${example.name}: ${data.prediction.wind_speed_kt.toFixed(1)} KT • ${data.prediction.intensity_category}`,
+              { id: "sample" }
+            );
+          } catch (err: unknown) {
+            const msg = err instanceof Error ? err.message : "Prediction inference failed.";
+            setError(msg);
+            toast.error("Inference failed", { id: "sample", description: msg });
+          } finally {
+            setLoading(false);
+          }
+        }
+      } catch (err: unknown) {
+        const msg = err instanceof Error ? err.message : "Failed to load sample.";
+        toast.error("Failed to load sample", {
+          id: "sample",
+          description: msg,
+        });
       }
-    } catch (err: unknown) {
-      toast.error("Failed to load sample", {
-        id: "sample",
-        description: err instanceof Error ? err.message : "Failed to load sample.",
-      });
-    }
-  }, [loadDashboard, loadHistory]);
+    },
+    [loadDashboard, loadHistory]
+  );
+
+  const handleLoadSample = useCallback(
+    async (autoRun = true) => {
+      if (EXAMPLE_OBSERVATIONS.length > 0) {
+        await handleLoadExample(EXAMPLE_OBSERVATIONS[0], autoRun);
+      }
+    },
+    [handleLoadExample]
+  );
 
   const predictCyclone = async () => {
     if (!file) {
@@ -207,27 +239,17 @@ export default function Page() {
     }
   };
 
-  // Initial mount: load sample observation and dashboard metrics asynchronously
+  // Initial mount: load dashboard metrics and prediction history only
+  // (NO automatic file scan on website open)
   const initialMounted = useRef(false);
   useEffect(() => {
     if (initialMounted.current) return;
     initialMounted.current = true;
 
     let ignore = false;
-    async function initSampleAndDashboard() {
+    async function initDashboardOnly() {
       try {
-        const res = await fetch("/BUREVI_20201129_1800.nc");
-        if (!res.ok) return;
-        const blob = await res.blob();
-        if (ignore) return;
-        const sampleFile = new File([blob], "BUREVI_20201129_1800.nc", {
-          type: "application/x-netcdf",
-        });
-        setFile(sampleFile);
-        setLoading(true);
-        const data = await predictCycloneFile(sampleFile);
-        if (ignore) return;
-        setPrediction(data);
+        setDashboardLoading(true);
         const [sumData, histData] = await Promise.all([
           fetchSummary().catch(() => null),
           fetchPredictionHistory({ limit: LIMIT, offset: 0 }).catch(() => null),
@@ -240,16 +262,15 @@ export default function Page() {
           }
         }
       } catch {
-        // Sample load error handled gracefully
+        // Dashboard summary load error handled gracefully
       } finally {
         if (!ignore) {
-          setLoading(false);
           setDashboardLoading(false);
         }
       }
     }
 
-    initSampleAndDashboard();
+    initDashboardOnly();
     return () => {
       ignore = true;
     };
@@ -261,7 +282,7 @@ export default function Page() {
   const currentPage = Math.floor(offset / LIMIT) + 1;
 
   // Dim and blur background brightness whenever telemetry data is displayed
-  const isShowingData = Boolean(prediction !== null || isHistoryModalOpen || loading);
+  const isShowingData = Boolean(prediction !== null || isHistoryModalOpen || isExamplesModalOpen || loading);
 
   return (
     <div className="relative min-h-screen w-full overflow-y-auto overflow-x-hidden bg-black text-[#F5F5F7] flex flex-col select-none 2xl:h-screen 2xl:overflow-hidden">
@@ -271,12 +292,14 @@ export default function Page() {
       {/* Dissolved Top Navbar (No hard border, dissolves directly into cosmic space) */}
       <DissolvedNav
         onOpenHistory={() => setIsHistoryModalOpen(true)}
+        onOpenExamples={() => setIsExamplesModalOpen(true)}
         onRefreshAll={() => {
           loadDashboard();
           loadHistory();
         }}
         isRefreshing={dashboardLoading}
         historyCount={summary?.total_predictions ?? totalCount}
+        exampleCount={EXAMPLE_OBSERVATIONS.length}
       />
 
       {/* Main Dynamic Viewport Container (Zero Scroll on Large Displays, Smooth Scroll on Laptops/Mobiles) */}
@@ -384,12 +407,57 @@ export default function Page() {
                         </label>
 
                         <button
-                          onClick={() => handleLoadSample(true)}
+                          onClick={() => setIsExamplesModalOpen(true)}
                           className="inline-flex items-center justify-center gap-2 px-3.5 sm:px-4 py-2.5 rounded-xl text-xs sm:text-sm font-orbitron font-bold tracking-wider bg-sky-500/20 hover:bg-sky-500/30 text-sky-300 transition-all shadow-sm"
                         >
-                          <ChevronRight className="size-4 text-sky-400 shrink-0" />
-                          <span className="truncate">Load Burevi Sample</span>
+                          <Sparkles className="size-4 text-sky-400 shrink-0" />
+                          <span className="truncate">Try Examples ({EXAMPLE_OBSERVATIONS.length})</span>
                         </button>
+                      </div>
+
+                      {/* Quick Benchmark Observation Grid */}
+                      <div className="pt-2 border-t border-white/10 space-y-2">
+                        <div className="flex items-center justify-between">
+                          <span className="text-[11px] font-orbitron font-bold tracking-wider text-sky-400 uppercase flex items-center gap-1.5">
+                            <Layers className="size-3 text-sky-400" />
+                            Benchmark Sample Tracks
+                          </span>
+                          <button
+                            type="button"
+                            onClick={() => setIsExamplesModalOpen(true)}
+                            className="text-[10px] font-mono text-white/60 hover:text-white underline decoration-white/30"
+                          >
+                            Browse all {EXAMPLE_OBSERVATIONS.length}
+                          </button>
+                        </div>
+
+                        <div className="grid grid-cols-2 gap-2">
+                          {EXAMPLE_OBSERVATIONS.slice(0, 4).map((ex) => (
+                            <button
+                              key={ex.id}
+                              onClick={() => handleLoadExample(ex, true)}
+                              disabled={loading}
+                              className="p-2.5 rounded-xl bg-white/5 hover:bg-sky-500/20 border border-white/10 hover:border-sky-500/40 text-left transition-all group flex flex-col justify-between min-w-0"
+                              title={`Load and analyze ${ex.name}`}
+                            >
+                              <div className="flex items-center justify-between gap-1 w-full">
+                                <span className="text-xs font-orbitron font-bold text-white group-hover:text-sky-300 truncate">
+                                  {ex.cyclone}
+                                </span>
+                                <span className="text-[9px] font-mono text-white/50 shrink-0">
+                                  {ex.year}
+                                </span>
+                              </div>
+                              <div className="text-[10px] font-mono text-white/60 truncate mt-0.5">
+                                {ex.timestamp.split(" ")[0]}
+                              </div>
+                              <div className="flex items-center justify-between text-[10px] font-mono mt-1 pt-1 border-t border-white/5 w-full">
+                                <span className="text-sky-400 font-bold">~{ex.expectedWindKt} kt</span>
+                                <span className="text-white/40">{ex.sizeKb} KB</span>
+                              </div>
+                            </button>
+                          ))}
+                        </div>
                       </div>
                     </div>
                   ) : (
@@ -401,13 +469,23 @@ export default function Page() {
                             {file.name}
                           </span>
                         </div>
-                        <button
-                          onClick={clearFile}
-                          disabled={loading}
-                          className="px-2.5 sm:px-3 py-1 rounded-lg text-xs font-bold text-white/60 hover:text-rose-400 hover:bg-rose-500/10 transition-colors shrink-0"
-                        >
-                          Clear
-                        </button>
+                        <div className="flex items-center gap-1.5 shrink-0">
+                          <button
+                            onClick={() => setIsExamplesModalOpen(true)}
+                            disabled={loading}
+                            className="px-2.5 py-1 rounded-lg text-xs font-mono text-sky-300 hover:bg-sky-500/20 transition-colors"
+                            title="Switch to another benchmark example"
+                          >
+                            Switch Example
+                          </button>
+                          <button
+                            onClick={clearFile}
+                            disabled={loading}
+                            className="px-2.5 sm:px-3 py-1 rounded-lg text-xs font-bold text-white/60 hover:text-rose-400 hover:bg-rose-500/10 transition-colors"
+                          >
+                            Clear
+                          </button>
+                        </div>
                       </div>
 
                       <div className="flex items-center justify-between text-xs font-mono text-sky-300/80 pt-1 font-semibold">
@@ -457,7 +535,7 @@ export default function Page() {
                     AWAITING OBSERVATION
                   </h3>
                   <p className="text-sm text-white/70 leading-relaxed font-sans">
-                    Select a NetCDF satellite raster on the left or load the Cyclone Burevi benchmark tensor to compute instantaneous vortex wind speeds and central eye depression.
+                    Select a NetCDF satellite raster on the left or test one of the 9 benchmark cyclone observations (Burevi, Yaas, Sitrang, Midhili) to compute instantaneous vortex wind speeds and central eye depression.
                   </p>
                   <div className="flex flex-wrap items-center justify-end gap-2.5 pt-2 text-xs font-mono">
                     <span className="px-3.5 py-1.5 rounded-xl bg-white/5 text-white/80 font-semibold">
@@ -1023,6 +1101,15 @@ export default function Page() {
             </motion.div>
           )}
         </AnimatePresence>
+
+        {/* Benchmark Observation Examples Modal */}
+        <ExamplesModal
+          isOpen={isExamplesModalOpen}
+          onClose={() => setIsExamplesModalOpen(false)}
+          onSelectExample={(ex, autoRun) => handleLoadExample(ex, autoRun)}
+          currentFilename={file?.name}
+          isLoading={loading}
+        />
       </main>
     </div>
   );

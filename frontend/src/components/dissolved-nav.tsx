@@ -1,19 +1,23 @@
 "use client";
 
-import { Archive, RefreshCw } from "lucide-react";
+import { Archive, RefreshCw, Sparkles } from "lucide-react";
 
 interface DissolvedNavProps {
   onOpenHistory?: () => void;
+  onOpenExamples?: () => void;
   onRefreshAll?: () => void;
   isRefreshing?: boolean;
   historyCount?: number;
+  exampleCount?: number;
 }
 
 export function DissolvedNav({
   onOpenHistory,
+  onOpenExamples,
   onRefreshAll,
   isRefreshing,
   historyCount,
+  exampleCount,
 }: DissolvedNavProps) {
   return (
     <nav className="absolute top-0 left-0 right-0 z-30 px-4 py-3.5 sm:px-8 sm:py-6 lg:px-12 flex items-center justify-between pointer-events-auto bg-transparent select-none">
@@ -50,12 +54,27 @@ export function DissolvedNav({
         </div>
       </div>
 
-      {/* Top Right: History Modal trigger & Sync button */}
-      <div className="flex items-center gap-2 sm:gap-3.5 text-sm font-medium">
+      {/* Top Right: History Modal, Examples Modal trigger & Sync button */}
+      <div className="flex items-center gap-2 sm:gap-3 text-sm font-medium">
+        {onOpenExamples && (
+          <button
+            onClick={onOpenExamples}
+            className="flex items-center gap-1.5 sm:gap-2 px-2.5 py-2 sm:px-4 sm:py-2.5 rounded-xl sm:rounded-2xl bg-white/10 hover:bg-sky-500/20 text-white hover:text-sky-300 font-orbitron text-xs sm:text-sm font-bold tracking-wider transition-all border border-white/10 shadow-sm"
+          >
+            <Sparkles className="size-3.5 sm:size-4 text-sky-400" />
+            <span><span className="hidden md:inline">BENCHMARK </span>SAMPLES</span>
+            {exampleCount != null && (
+              <span className="px-1.5 sm:px-2 py-0.5 rounded-full bg-sky-400/20 text-sky-300 font-mono text-[10px] sm:text-xs font-black">
+                {exampleCount}
+              </span>
+            )}
+          </button>
+        )}
+
         {onOpenHistory && (
           <button
             onClick={onOpenHistory}
-            className="flex items-center gap-2 sm:gap-2.5 px-3 py-2 sm:px-5 sm:py-2.5 rounded-xl sm:rounded-2xl bg-sky-500/20 hover:bg-sky-500/30 text-sky-200 font-orbitron text-xs sm:text-sm font-bold tracking-wider transition-all shadow-[0_0_20px_rgba(56,189,248,0.2)]"
+            className="flex items-center gap-1.5 sm:gap-2.5 px-3 py-2 sm:px-5 sm:py-2.5 rounded-xl sm:rounded-2xl bg-sky-500/20 hover:bg-sky-500/30 text-sky-200 font-orbitron text-xs sm:text-sm font-bold tracking-wider transition-all shadow-[0_0_20px_rgba(56,189,248,0.2)]"
           >
             <Archive className="size-3.5 sm:size-4 text-sky-400" />
             <span><span className="hidden sm:inline">PREDICTION </span>HISTORY</span>

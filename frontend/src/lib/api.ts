@@ -8,6 +8,29 @@ import {
 
 const API_BASE_URL =
   process.env.NEXT_PUBLIC_API_URL || "/api";
+const DIRECT_BACKEND_URL = "https://cycloneai-backend.onrender.com";
+
+async function requestWithFallback(
+  path: string,
+  options?: RequestInit
+): Promise<Response> {
+  const primaryUrl = `${API_BASE_URL}${path}`;
+  const fallbackUrl = `${DIRECT_BACKEND_URL}${path}`;
+
+  try {
+    const res = await fetch(primaryUrl, options);
+    // If the proxy route is working, return it
+    if (res.ok) return res;
+    // If proxy returned a gateway/offline error or 404, fallback directly to Render
+    if (res.status === 502 || res.status === 503 || res.status === 504 || res.status === 404) {
+      return await fetch(fallbackUrl, options);
+    }
+    return res;
+  } catch {
+    // If proxy network request failed entirely, fetch directly from Render
+    return await fetch(fallbackUrl, options);
+  }
+}
 
 export async function checkBackendHealth(): Promise<{
   online: boolean;
@@ -16,7 +39,7 @@ export async function checkBackendHealth(): Promise<{
 }> {
   const start = performance.now();
   try {
-    const res = await fetch(`${API_BASE_URL}/`, {
+    const res = await requestWithFallback("/", {
       method: "GET",
       cache: "no-store",
     });
@@ -32,7 +55,7 @@ export async function checkBackendHealth(): Promise<{
 }
 
 export async function fetchModelInfo(): Promise<ModelInfoResponse> {
-  const res = await fetch(`${API_BASE_URL}/model-info`, {
+  const res = await requestWithFallback("/model-info", {
     cache: "no-store",
   });
   if (!res.ok) {
@@ -42,7 +65,7 @@ export async function fetchModelInfo(): Promise<ModelInfoResponse> {
 }
 
 export async function fetchSummary(): Promise<SummaryResponse> {
-  const res = await fetch(`${API_BASE_URL}/predictions/summary`, {
+  const res = await requestWithFallback("/predictions/summary", {
     cache: "no-store",
   });
   if (!res.ok) {
@@ -63,7 +86,8 @@ export async function fetchPredictionHistory(params: {
   if (params.search?.trim()) query.set("search", params.search.trim());
   if (params.category?.trim()) query.set("category", params.category.trim());
 
-  const res = await fetch(`${API_BASE_URL}/predictions?${query.toString()}`, {
+  const path = `/predictions?${query.toString()}`;
+  const res = await requestWithFallback(path, {
     cache: "no-store",
   });
   if (!res.ok) {
@@ -75,7 +99,7 @@ export async function fetchPredictionHistory(params: {
 export async function fetchPredictionById(
   id: string
 ): Promise<PredictionResponse> {
-  const res = await fetch(`${API_BASE_URL}/predictions/${id}`, {
+  const res = await requestWithFallback(`/predictions/${id}`, {
     cache: "no-store",
   });
   if (!res.ok) {
@@ -87,13 +111,33 @@ export async function fetchPredictionById(
 export async function predictCycloneFile(
   file: File
 ): Promise<PredictionResponse> {
-  const formData = new FormData();
-  formData.append("file", file);
+  const primaryUrl = `${API_BASE_URL}/predict`;
+  const fallbackUrl = `${DIRECT_BACKEND_URL}/predict`;
 
-  const res = await fetch(`${API_BASE_URL}/predict`, {
-    method: "POST",
-    body: formData,
-  });
+  const makeFormData = () => {
+    const formData = new FormData();
+    formData.append("file", file);
+    return formData;
+  };
+
+  let res: Response;
+  try {
+    res = await fetch(primaryUrl, {
+      method: "POST",
+      body: makeFormData(),
+    });
+    if (!res.ok && (res.status === 502 || res.status === 503 || res.status === 504 || res.status === 404)) {
+      res = await fetch(fallbackUrl, {
+        method: "POST",
+        body: makeFormData(),
+      });
+    }
+  } catch {
+    res = await fetch(fallbackUrl, {
+      method: "POST",
+      body: makeFormData(),
+    });
+  }
 
   const data = await res.json();
   if (!res.ok || !data.success) {
@@ -144,7 +188,7 @@ export const IMD_CATEGORIES = [
     minWind: 48,
     maxWind: 63,
     color: "text-amber-400 bg-amber-500/10",
-    badgeVariant: "destructive" as const,
+    badgeVariant: "default" as const,
     description: "Sustained winds 48–63 knots (89–117 km/h).",
   },
   {
@@ -152,8 +196,8 @@ export const IMD_CATEGORIES = [
     minWind: 64,
     maxWind: 89,
     color: "text-orange-400 bg-orange-500/10",
-    badgeVariant: "destructive" as const,
-    description: "Sustained winds 64–89 knots (118–165 km/h).",
+    badgeVariant: "default" as const,
+    description: "Sustained winds 64–89 knots (118–166 km/h).",
   },
   {
     name: "Extremely Severe Cyclonic Storm",
@@ -161,30 +205,29 @@ export const IMD_CATEGORIES = [
     maxWind: 119,
     color: "text-rose-400 bg-rose-500/10",
     badgeVariant: "destructive" as const,
-    description: "Sustained winds 90–119 knots (166–220 km/h).",
+    description: "Sustained winds 90–119 knots (167–221 km/h).",
   },
   {
     name: "Super Cyclonic Storm",
     minWind: 120,
-    maxWind: 300,
-    color: "text-purple-400 bg-purple-500/10 animate-pulse",
+    maxWind: 999,
+    color: "text-red-500 bg-red-500/20",
     badgeVariant: "destructive" as const,
-    description: "Catastrophic winds ≥ 120 knots (≥ 221 km/h).",
+    description: "Sustained winds ≥ 120 knots (≥ 222 km/h).",
   },
 ];
 
-export function getCategoryMetadata(category: string) {
-  const match = IMD_CATEGORIES.find(
-    (c) => c.name.toLowerCase() === category.toLowerCase().trim()
-  );
+export function getCategoryMetadata(categoryName: string) {
   return (
-    match || {
-      name: category,
+    IMD_CATEGORIES.find(
+      (c) => c.name.toLowerCase() === categoryName?.toLowerCase()
+    ) || {
+      name: categoryName || "Unknown",
       minWind: 0,
       maxWind: 0,
-      color: "text-muted-foreground bg-muted/20",
-      badgeVariant: "outline" as const,
-      description: "Tropical disturbance.",
+      color: "text-gray-400 bg-gray-500/10",
+      badgeVariant: "secondary" as const,
+      description: "Unclassified intensity observation.",
     }
   );
 }

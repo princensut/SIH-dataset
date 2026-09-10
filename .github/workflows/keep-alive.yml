@@ -14,9 +14,7 @@ jobs:
         run: |
           BACKEND_URL="${{ secrets.BACKEND_URL }}"
           if [ -z "$BACKEND_URL" ]; then
-            # Default placeholder or fallback if secret is not set yet
-            echo "BACKEND_URL secret is not set yet. Please add BACKEND_URL in Repo Settings -> Secrets."
-            exit 0
+            BACKEND_URL="https://cycloneai-backend.onrender.com"
           fi
           echo "Pinging $BACKEND_URL/ping..."
-          curl -fsS "$BACKEND_URL/ping" || echo "Ping failed or server is waking up"
+          curl -fsS -m 20 "$BACKEND_URL/ping" || echo "Ping failed or server is waking up"
