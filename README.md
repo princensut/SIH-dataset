@@ -211,13 +211,13 @@ This project is distributed under the MIT license. See the repository LICENSE fi
 
 ## Contributors
 - Team Name : Env pushers
-- Members:                                                            Role :
-- 1. Prince kumar (https://www.github.com/princensut)                AI/ML Lead
-  2. Lakshay dhall (https://www.github.com/lakshay2k6)               Documentation, PPT & Demo Lead
-  3. Rishabh Gupta (https://www.github.com/rishicancode)             Data & Preprocessing Lead
-  4. Nidhi (https://www.github.com/thenidhz)                         Frontend & UI Lead
-  5. arshiya jain (https://www.github.com/arshiyajain13)             Deployment & DevOps Lead
-  6. Rohit dahiya (https://www.github.com/senkuthegreat)             Backend & API Lead
+- Members:                                                            
+- 1. [Prince kumar](https://www.github.com/princensut)      ~        AI/ML Lead
+  2. [Lakshay dhall](https://www.github.com/lakshay2k6)     ~        Documentation, PPT & Demo Lead
+  3. [Rishabh Gupta](https://www.github.com/rishicancode)   ~        Data & Preprocessing Lead
+  4. [Nidhi](https://www.github.com/thenidhz)               ~        Frontend & UI Lead
+  5. [arshiya jain](https://www.github.com/arshiyajain13)   ~        Deployment & DevOps Lead
+  6. [Rohit dahiya](https://www.github.com/senkuthegreat)   ~        Backend & API Lead
 
 ## Languages
 
