@@ -1,14 +1,14 @@
 ﻿# Final Presentation
 
-Add the final SIH presentation link or upload the presentation file in this folder if it is small enough for GitHub.
+Here is our final Presentation slides
 
-## Option 1: Upload file
+
 
 - File name: `SIH_Cyclone_Intensity_Prediction_Presentation.pptx`
 
-## Option 2: Add external drive link
 
-- Google Drive / OneDrive link: Replace this text with your shareable presentation link.
+
+- Google Drive : [PPT link](https://docs.google.com/presentation/d/1bai-4sL1nUTTIZBvllqxaDYV6Ao0tSyV/edit?usp=sharing&ouid=112735489170251860711&rtpof=true&sd=true)
 
 ## Suggested slide sections
 
