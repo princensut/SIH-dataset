@@ -7,7 +7,7 @@ Cyclone AI - Intensity Prediction
 - PS Title: To develop an Artificial Intelligence (AI) / Machine Learning (ML) based system for identification, classification, and                           prediction of different tropical cyclone patterns using multi-source satellite data.
 - Category: Software
 - Theme: Disaster Management.
-
+- **Deployed Link - https://sih-dataset.vercel.app**
 ## Project Snapshot
 
 - Detects cyclone intensity from satellite inputs(NetCDF files)
