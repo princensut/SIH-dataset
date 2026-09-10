@@ -1,16 +1,16 @@
-# Cyclone Intensity Prediction
+<img width="1362" height="628" alt="image" src="https://github.com/user-attachments/assets/2bf3d83e-20a5-42ba-b272-9ada9b42a1c8" /># Cyclone Intensity Prediction
 
 ## 1. Project Information
 
-- Project Title: Cyclone Intensity Prediction
-- PS ID: SIH2026-DEMO-001
+- Project Title: Cyclone AI - Cyclone  Intensity Prediction
+- PS ID: SIH26070
 - PS Title: AI-powered tropical cyclone intensity estimation and disaster-risk assessment from satellite data
 - Category: Software
 - Theme: Disaster Management / Climate Resilience
 
 ## Project Snapshot
 
-- Detects cyclone intensity from satellite inputs
+- Detects cyclone intensity from satellite inputs(NetCDF files)
 - Uses a deep learning model for wind-speed and pressure estimation
 - Classifies storm severity using IMD-style categories
 - Provides a web dashboard for live results and history
@@ -89,6 +89,7 @@ Prediction Results + Severity Classification
 ```text
 SIH-dataset/
 ├── README.md
+├── Reasearch.md
 ├── SUBMISSION_GUIDE.md
 ├── DEPLOYMENT.md
 ├── requirements.txt
@@ -148,12 +149,14 @@ A demo video is recommended to explain the product in action. Add the YouTube or
 
 ## 10. Screenshots / Prototype Photos
 
-Add key screenshots and prototype images to [assets/screenshots](assets/screenshots). View the naming guidance in [assets/screenshots/README.md](assets/screenshots/README.md).
+<img width="1362" height="628" alt="image" src="https://github.com/user-attachments/assets/52683236-11b2-4d11-86de-e64d77db20aa" />
+
+
 
 ## 11. Installation
 
 ```bash
-git clone https://github.com/NSUT-SIH-26/NSUT-SIH-DEMO.git
+git clone https://github.com/princensut/SIH-dataset.git
 cd SIH-dataset
 
 # Python environment
@@ -207,11 +210,18 @@ Cyclone Intensity Prediction is an AI-assisted disaster-preparedness system that
 This project is distributed under the MIT license. See the repository LICENSE file for details.
 
 ## Contributors
-
-- NSUT-SIH-26
+- Env pushers
+- Members:
+- 1. Prince kumar (https://www.github.com/princensut)
+  2. Lakshay dhall (https://www.github.com/lakshay2k6)
+  3. Rishabh Gupta (https://www.github.com/rishicancode)
+  4. Nidhi (https://www.github.com/thenidhz)
+  5. arshiya jain (https://www.github.com)
+  6. Rohit dahiya (https://www.github.com/senkuthegreat)
 
 ## Languages
 
 - Python
 - TypeScript
 - JavaScript
+  
