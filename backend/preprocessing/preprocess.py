@@ -1,4 +1,5 @@
-import io
+import os
+import tempfile
 
 import numpy as np
 import xarray as xr  # type: ignore
@@ -81,56 +82,74 @@ def load_tb_from_netcdf(file_bytes):
     """
 
     try:
+        # The NetCDF4 backend cannot reliably identify uploaded file-like
+        # objects, so give each upload a real temporary path and select the
+        # installed backend explicitly.
+        with tempfile.NamedTemporaryFile(suffix=".nc", delete=False) as file:
+            file.write(file_bytes)
+            temp_path = file.name
 
-        with xr.open_dataset(
-            io.BytesIO(file_bytes)
-        ) as ds:
-
-            variable_name = find_tb_variable(ds)
-
-            variable = ds[variable_name]
-
-            tb = variable.values
-
-            # Metadata
-            original_shape = list(
-                variable.shape
-            )
-
-            dimensions = {
-                str(key): int(value)
-                for key, value in variable.sizes.items()
-            }
-
-            units = variable.attrs.get(
-                "units"
-            )
-
-            long_name = variable.attrs.get(
-                "long_name"
-            )
-
-            # Extract genuine cyclone & observation metadata if present
-            cyclone_name = variable.attrs.get("cyclone_name") or ds.attrs.get("cyclone_name")
-            cyclone_id = variable.attrs.get("cyclone_id") or ds.attrs.get("cyclone_id")
-            cyclone_lat = variable.attrs.get("cyclone_latitude") or ds.attrs.get("cyclone_latitude")
-            cyclone_lon = variable.attrs.get("cyclone_longitude") or ds.attrs.get("cyclone_longitude")
-            observation_time = variable.attrs.get("ibtracs_time") or ds.attrs.get("time")
-
-            if cyclone_lat is not None:
+        try:
+            try:
+                dataset = xr.open_dataset(temp_path, engine="netcdf4")
+            except Exception as netcdf4_error:
                 try:
-                    cyclone_lat = round(float(cyclone_lat), 2)
-                except Exception:
-                    cyclone_lat = None
+                    dataset = xr.open_dataset(temp_path, engine="h5netcdf")
+                except Exception as h5netcdf_error:
+                    raise ValueError(
+                        "No installed NetCDF backend could read this file. "
+                        f"netcdf4: {netcdf4_error}; h5netcdf: {h5netcdf_error}"
+                    ) from h5netcdf_error
 
-            if cyclone_lon is not None:
-                try:
-                    cyclone_lon = round(float(cyclone_lon), 2)
-                except Exception:
-                    cyclone_lon = None
+            with dataset as ds:
 
-            if observation_time is not None:
-                observation_time = str(observation_time).strip()
+                variable_name = find_tb_variable(ds)
+
+                variable = ds[variable_name]
+
+                tb = variable.values
+
+                # Metadata
+                original_shape = list(
+                    variable.shape
+                )
+
+                dimensions = {
+                    str(key): int(value)
+                    for key, value in variable.sizes.items()
+                }
+
+                units = variable.attrs.get(
+                    "units"
+                )
+
+                long_name = variable.attrs.get(
+                    "long_name"
+                )
+
+                # Extract genuine cyclone & observation metadata if present
+                cyclone_name = variable.attrs.get("cyclone_name") or ds.attrs.get("cyclone_name")
+                cyclone_id = variable.attrs.get("cyclone_id") or ds.attrs.get("cyclone_id")
+                cyclone_lat = variable.attrs.get("cyclone_latitude") or ds.attrs.get("cyclone_latitude")
+                cyclone_lon = variable.attrs.get("cyclone_longitude") or ds.attrs.get("cyclone_longitude")
+                observation_time = variable.attrs.get("ibtracs_time") or ds.attrs.get("time")
+
+                if cyclone_lat is not None:
+                    try:
+                        cyclone_lat = round(float(cyclone_lat), 2)
+                    except Exception:
+                        cyclone_lat = None
+
+                if cyclone_lon is not None:
+                    try:
+                        cyclone_lon = round(float(cyclone_lon), 2)
+                    except Exception:
+                        cyclone_lon = None
+
+                if observation_time is not None:
+                    observation_time = str(observation_time).strip()
+        finally:
+            os.unlink(temp_path)
 
     except Exception as e:
 

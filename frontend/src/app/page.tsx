@@ -160,14 +160,39 @@ export default function Page() {
     async (example: ExampleObservation, autoRun = true) => {
       try {
         toast.loading(`Loading ${example.name}...`, { id: "sample" });
-        let res = await fetch(example.path);
-        if (!res.ok) {
-          res = await fetch(`/${example.filename}`);
+
+        const isNetCDF = (bytes: Uint8Array) =>
+          (bytes[0] === 0x89 &&
+            bytes[1] === 0x48 &&
+            bytes[2] === 0x44 &&
+            bytes[3] === 0x46) ||
+          (bytes[0] === 0x43 &&
+            bytes[1] === 0x44 &&
+            bytes[2] === 0x46);
+
+        const examplePaths = [example.path, `/${example.filename}`];
+        let blob: Blob | null = null;
+
+        for (const path of examplePaths) {
+          const res = await fetch(path, { cache: "no-store" });
+          if (!res.ok) {
+            continue;
+          }
+
+          const candidate = await res.blob();
+          const header = new Uint8Array(await candidate.slice(0, 4).arrayBuffer());
+          if (isNetCDF(header)) {
+            blob = candidate;
+            break;
+          }
         }
-        if (!res.ok) {
-          throw new Error(`Could not fetch ${example.filename} observation.`);
+
+        if (!blob) {
+          throw new Error(
+            `Example ${example.filename} is unavailable in the hosted build.`
+          );
         }
-        const blob = await res.blob();
+
         const sampleFile = new File([blob], example.filename, {
           type: "application/x-netcdf",
         });
