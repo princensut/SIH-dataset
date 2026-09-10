@@ -64,6 +64,28 @@ def find_tb_variable(ds):
         if lower_name == "bt":
             return name
 
+    # Some satellite products use an instrument-specific variable name and
+    # identify the field through CF metadata instead.
+    for name, data_var in ds.data_vars.items():
+        metadata_text = " ".join(
+            str(data_var.attrs.get(key, "")).lower()
+            for key in ("standard_name", "long_name", "description", "units")
+        )
+        if "brightness_temperature" in metadata_text or "brightness temperature" in metadata_text:
+            return name
+
+    # Example products can contain only one numeric raster without a useful
+    # name. Choose the largest multidimensional numeric field in that case.
+    raster_candidates = [
+        (name, data_var)
+        for name, data_var in ds.data_vars.items()
+        if len(data_var.dims) >= 2 and np.issubdtype(data_var.dtype, np.number)
+    ]
+    if len(raster_candidates) == 1:
+        return raster_candidates[0][0]
+    if raster_candidates:
+        return max(raster_candidates, key=lambda item: item[1].size)[0]
+
     raise ValueError(
         "Could not find a brightness-temperature variable "
         f"in the uploaded NetCDF. "
