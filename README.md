@@ -150,6 +150,15 @@ A demo video is recommended to explain the product in action. Add the YouTube or
 ## 10. Screenshots / Prototype Photos
 
 <img width="1362" height="628" alt="image" src="https://github.com/user-attachments/assets/52683236-11b2-4d11-86de-e64d77db20aa" />
+<img width="1366" height="638" alt="image" src="https://github.com/user-attachments/assets/4d0f44d9-7c43-4564-a769-d58b4edae20a" />
+<img width="487" height="636" alt="image" src="https://github.com/user-attachments/assets/9fe933b5-1541-4f6a-bf6c-55315b10628c" />
+<img width="515" height="568" alt="image" src="https://github.com/user-attachments/assets/edaf8052-5e2b-4367-95da-1f6e5516c31d" />
+<img width="344" height="455" alt="image" src="https://github.com/user-attachments/assets/6913b9d1-3406-45c7-bc89-af9f156b78f8" />
+
+
+
+
+
 
 
 
