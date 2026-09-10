@@ -210,14 +210,14 @@ Cyclone Intensity Prediction is an AI-assisted disaster-preparedness system that
 This project is distributed under the MIT license. See the repository LICENSE file for details.
 
 ## Contributors
-- Env pushers
-- Members:
-- 1. Prince kumar (https://www.github.com/princensut)
-  2. Lakshay dhall (https://www.github.com/lakshay2k6)
-  3. Rishabh Gupta (https://www.github.com/rishicancode)
-  4. Nidhi (https://www.github.com/thenidhz)
-  5. arshiya jain (https://www.github.com/arshiyajain13)
-  6. Rohit dahiya (https://www.github.com/senkuthegreat)
+- Team Name : Env pushers
+- Members:                                                            Role :
+- 1. Prince kumar (https://www.github.com/princensut)                AI/ML Lead
+  2. Lakshay dhall (https://www.github.com/lakshay2k6)               Documentation, PPT & Demo Lead
+  3. Rishabh Gupta (https://www.github.com/rishicancode)             Data & Preprocessing Lead
+  4. Nidhi (https://www.github.com/thenidhz)                         Frontend & UI Lead
+  5. arshiya jain (https://www.github.com/arshiyajain13)             Deployment & DevOps Lead
+  6. Rohit dahiya (https://www.github.com/senkuthegreat)             Backend & API Lead
 
 ## Languages
 
