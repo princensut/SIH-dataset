@@ -22,3 +22,7 @@ frontend/public/**/*.nc -filter -diff -merge
 frontend/public/*.nc -filter -diff -merge
 frontend/public/**/*.png -filter -diff -merge
 frontend/public/*.png -filter -diff -merge
+
+# Backend benchmark sample NetCDF rasters must NOT use Git LFS so Render can deploy them directly
+backend/sample_data/** -filter -diff -merge
+backend/sample_data/*.nc -filter -diff -merge

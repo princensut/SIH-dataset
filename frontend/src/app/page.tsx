@@ -194,10 +194,11 @@ export default function Page() {
             bytes[1] === 0x44 &&
             bytes[2] === 0x46);
 
+        const t = Date.now();
         const examplePaths = [
-          example.path,
-          `/examples/${example.filename}`,
-          `/${example.filename}`,
+          `${example.path}?t=${t}`,
+          `/examples/${example.filename}?t=${t}`,
+          `/${example.filename}?t=${t}`,
         ];
         let blob: Blob | null = null;
 

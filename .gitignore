@@ -41,6 +41,8 @@ data/processed/dataset/
 !frontend/public/*.nc4
 !frontend/public/**/*.nc
 !frontend/public/**/*.nc4
+!backend/sample_data/*.nc
+!backend/sample_data/**/*.nc
 
 # =========================
 # Large archives

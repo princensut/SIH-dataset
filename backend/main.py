@@ -613,7 +613,8 @@ async def process_prediction_file(
 
         tb, input_metadata = (
             load_tb_from_netcdf(
-                file_bytes
+                file_bytes,
+                original_filename,
             )
         )
 

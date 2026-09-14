@@ -97,7 +97,7 @@ def find_tb_variable(ds):
 # LOAD NETCDF
 # ============================================================
 
-def load_tb_from_netcdf(file_bytes):
+def load_tb_from_netcdf(file_bytes, filename=None):
     """
     Load brightness-temperature data and metadata
     from an uploaded NetCDF file.
@@ -105,10 +105,24 @@ def load_tb_from_netcdf(file_bytes):
 
     # Check for Git LFS text pointer file (typically ~130 bytes starting with "version https://git-lfs")
     if file_bytes.startswith(b"version https://git-lfs") or (len(file_bytes) < 300 and b"git-lfs" in file_bytes):
-        raise ValueError(
-            "The uploaded file is a Git LFS pointer text file (0.1 KB), not the binary NetCDF raster data. "
-            "Please ensure you download and upload the actual binary NetCDF file (~65 KB)."
-        )
+        resolved = False
+        if filename:
+            from pathlib import Path
+            clean_name = Path(filename).name
+            sample_candidate = Path(__file__).resolve().parent.parent / "sample_data" / clean_name
+            if sample_candidate.exists():
+                try:
+                    with open(sample_candidate, "rb") as sf:
+                        file_bytes = sf.read()
+                    resolved = True
+                except Exception:
+                    resolved = False
+
+        if not resolved:
+            raise ValueError(
+                "The uploaded file is a Git LFS pointer text file (0.1 KB), not the binary NetCDF raster data. "
+                "Please ensure you download and upload the actual binary NetCDF file (~65 KB)."
+            )
 
     if len(file_bytes) < 256:
         raise ValueError(
