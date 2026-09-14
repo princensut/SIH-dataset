@@ -15,3 +15,10 @@
 *.tiff filter=lfs diff=lfs merge=lfs -text
 *.csv filter=lfs diff=lfs merge=lfs -text
 data/metadata/cyclone_tracks.csv filter=lfs diff=lfs merge=lfs -text
+
+# Frontend public assets and benchmark samples must NOT use Git LFS so Vercel can deploy them directly
+frontend/public/** -filter -diff -merge
+frontend/public/**/*.nc -filter -diff -merge
+frontend/public/*.nc -filter -diff -merge
+frontend/public/**/*.png -filter -diff -merge
+frontend/public/*.png -filter -diff -merge

@@ -20,6 +20,7 @@ import {
   Sparkles,
   Layers,
   Play,
+  CheckCircle2,
 } from "lucide-react";
 import { DissolvedNav } from "@/components/dissolved-nav";
 import { SatelliteShowcaseEarth } from "@/components/satellite-showcase-earth";
@@ -49,6 +50,7 @@ export default function Page() {
   const [isZoomModalOpen, setIsZoomModalOpen] = useState(false);
   const [isHistoryModalOpen, setIsHistoryModalOpen] = useState(false);
   const [isExamplesModalOpen, setIsExamplesModalOpen] = useState(false);
+  const [activeExample, setActiveExample] = useState<ExampleObservation | null>(null);
   const [summary, setSummary] = useState<SummaryResponse | null>(null);
   const [history, setHistory] = useState<PredictionHistoryItem[]>([]);
   const [totalCount, setTotalCount] = useState(0);
@@ -116,7 +118,10 @@ export default function Page() {
     };
   }, [offset, search, category]);
 
-  const validateAndSetFile = (selectedFile: File) => {
+  const validateAndSetFile = async (
+    selectedFile: File,
+    exampleMeta?: ExampleObservation
+  ) => {
     setError("");
     setPrediction(null);
 
@@ -135,7 +140,25 @@ export default function Page() {
       return;
     }
 
+    // Git LFS pointer detection: LFS pointers are ~130 bytes plain text
+    if (selectedFile.size < 512) {
+      try {
+        const text = await selectedFile.slice(0, 150).text();
+        if (text.includes("git-lfs")) {
+          setError(
+            "This file is a Git LFS pointer (0.1 KB), not the real NetCDF raster. Please download the full binary file (~65 KB)."
+          );
+          return;
+        }
+      } catch {
+        // ignore
+      }
+      setError("The uploaded file is too small (<512 bytes) to be a valid NetCDF dataset.");
+      return;
+    }
+
     setFile(selectedFile);
+    setActiveExample(exampleMeta || null);
   };
 
   const handleFileChange = (e: ChangeEvent<HTMLInputElement>) => {
@@ -151,6 +174,7 @@ export default function Page() {
 
   const clearFile = () => {
     setFile(null);
+    setActiveExample(null);
     setPrediction(null);
     setError("");
     if (fileInputRef.current) fileInputRef.current.value = "";
@@ -170,34 +194,50 @@ export default function Page() {
             bytes[1] === 0x44 &&
             bytes[2] === 0x46);
 
-        const examplePaths = [example.path, `/${example.filename}`];
+        const examplePaths = [
+          example.path,
+          `/examples/${example.filename}`,
+          `/${example.filename}`,
+        ];
         let blob: Blob | null = null;
 
         for (const path of examplePaths) {
-          const res = await fetch(path, { cache: "no-store" });
-          if (!res.ok) {
-            continue;
-          }
+          try {
+            const res = await fetch(path, { cache: "no-store" });
+            if (!res.ok) continue;
 
-          const candidate = await res.blob();
-          const header = new Uint8Array(await candidate.slice(0, 4).arrayBuffer());
-          if (isNetCDF(header)) {
-            blob = candidate;
-            break;
+            const candidate = await res.blob();
+            const header = new Uint8Array(await candidate.slice(0, 4).arrayBuffer());
+            if (isNetCDF(header)) {
+              blob = candidate;
+              break;
+            }
+          } catch {
+            // try next candidate path
+          }
+        }
+
+        // Embedded base64 fallback for default benchmark observation (Burevi 2020)
+        if (!blob && example.id === "burevi-2020") {
+          try {
+            const { getBureviFallbackBlob } = await import("@/lib/burevi-fallback");
+            blob = getBureviFallbackBlob();
+          } catch {
+            // fallback import failed
           }
         }
 
         if (!blob) {
           throw new Error(
-            `Example ${example.filename} is unavailable in the hosted build.`
+            `Unable to retrieve ${example.filename}. Please check your connection or choose another example.`
           );
         }
 
         const sampleFile = new File([blob], example.filename, {
           type: "application/x-netcdf",
         });
-        validateAndSetFile(sampleFile);
-        toast.success(`${example.name} staged (${example.sizeKb} KB)`, { id: "sample" });
+        await validateAndSetFile(sampleFile, example);
+        toast.success(`${example.name} ready (${example.sizeKb} KB)`, { id: "sample" });
 
         if (autoRun) {
           setLoading(true);
@@ -394,7 +434,7 @@ export default function Page() {
                 <p className="text-xs sm:text-sm text-white/75 leading-relaxed font-sans">
                   {prediction
                     ? `Processed observation for ${prediction.input.filename} (${(prediction.input.file_size_bytes / 1024).toFixed(1)} KB) with ${prediction.data_quality.valid_percentage.toFixed(1)}% valid sensor pixels.`
-                    : "Satellite meteorological intelligence estimates tropical cyclone intensity, maximum sustained wind speeds, and central minimum pressure from infrared observation fields."}
+                    : "Select a NetCDF satellite raster (.nc) or benchmark observation to estimate peak sustained wind and central eye pressure."}
                 </p>
 
                 {/* File Ingestion & Trigger */}
@@ -403,144 +443,156 @@ export default function Page() {
                     <div
                       onDragOver={(e) => e.preventDefault()}
                       onDrop={handleDrop}
-                      className="p-4 sm:p-5 rounded-3xl bg-black/50 backdrop-blur-xl transition-all space-y-3 sm:space-y-4 shadow-xl"
+                      className="p-4 sm:p-5 rounded-3xl bg-black/50 border border-white/10 backdrop-blur-xl transition-all space-y-3.5 shadow-xl"
                     >
-                      <div className="flex items-center gap-3 sm:gap-4">
-                        <div className="size-10 sm:size-12 rounded-2xl bg-sky-500/10 flex items-center justify-center text-sky-400 shrink-0">
-                          <CloudUpload className="size-5 sm:size-6" />
+                      <div className="flex items-center justify-between gap-3">
+                        <div className="flex items-center gap-3 min-w-0">
+                          <div className="size-10 rounded-2xl bg-sky-500/15 flex items-center justify-center text-sky-400 shrink-0">
+                            <CloudUpload className="size-5" />
+                          </div>
+                          <div className="min-w-0">
+                            <p className="text-xs sm:text-sm font-bold text-white truncate">
+                              Drop NetCDF Satellite File
+                            </p>
+                            <p className="text-[10px] sm:text-[11px] text-white/50 font-mono mt-0.5">
+                              .nc, .nc4 raster • max 50 MB
+                            </p>
+                          </div>
                         </div>
-                        <div className="min-w-0">
-                          <p className="text-sm sm:text-base font-bold text-white truncate">
-                            Drop NetCDF Satellite File
-                          </p>
-                          <p className="text-[11px] sm:text-xs text-white/60 font-mono mt-0.5">
-                            .nc, .nc4 raster • max 50 MB
-                          </p>
-                        </div>
-                      </div>
 
-                      <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2.5 sm:gap-3 pt-1">
-                        <label className="cursor-pointer inline-flex items-center justify-center gap-2 px-4 sm:px-5 py-2.5 rounded-xl text-xs sm:text-sm font-orbitron font-bold tracking-wider bg-white hover:bg-sky-400 text-black transition-all shadow-md">
-                          Browse File
-                          <input
-                            ref={fileInputRef}
-                            type="file"
-                            accept=".nc,.nc4,.netcdf"
-                            onChange={handleFileChange}
-                            hidden
-                          />
-                        </label>
+                        <div className="flex items-center gap-2 shrink-0">
+                          <label className="cursor-pointer inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-orbitron font-bold tracking-wider bg-white hover:bg-sky-400 text-black transition-all shadow-sm">
+                            Browse
+                            <input
+                              ref={fileInputRef}
+                              type="file"
+                              accept=".nc,.nc4,.netcdf"
+                              onChange={handleFileChange}
+                              hidden
+                            />
+                          </label>
 
-                        <button
-                          onClick={() => setIsExamplesModalOpen(true)}
-                          className="inline-flex items-center justify-center gap-2 px-3.5 sm:px-4 py-2.5 rounded-xl text-xs sm:text-sm font-orbitron font-bold tracking-wider bg-sky-500/20 hover:bg-sky-500/30 text-sky-300 transition-all shadow-sm"
-                        >
-                          <Sparkles className="size-4 text-sky-400 shrink-0" />
-                          <span className="truncate">Try Examples ({EXAMPLE_OBSERVATIONS.length})</span>
-                        </button>
-                      </div>
-
-                      {/* Quick Benchmark Observation Grid */}
-                      <div className="pt-2 border-t border-white/10 space-y-2">
-                        <div className="flex items-center justify-between">
-                          <span className="text-[11px] font-orbitron font-bold tracking-wider text-sky-400 uppercase flex items-center gap-1.5">
-                            <Layers className="size-3 text-sky-400" />
-                            Benchmark Sample Tracks
-                          </span>
                           <button
-                            type="button"
                             onClick={() => setIsExamplesModalOpen(true)}
-                            className="text-[10px] font-mono text-white/60 hover:text-white underline decoration-white/30"
+                            className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-orbitron font-bold tracking-wider bg-white/10 hover:bg-sky-500/20 text-white hover:text-sky-300 transition-all border border-white/10"
+                            title="Browse all benchmark cyclone tracks"
                           >
-                            Browse all {EXAMPLE_OBSERVATIONS.length}
+                            <Sparkles className="size-3.5 text-sky-400" />
+                            <span className="hidden xs:inline">Benchmarks</span>
+                            <span className="font-mono text-[10px] bg-sky-400/20 text-sky-300 px-1.5 py-0.2 rounded-full font-black">
+                              {EXAMPLE_OBSERVATIONS.length}
+                            </span>
                           </button>
                         </div>
+                      </div>
 
-                        <div className="grid grid-cols-2 gap-2">
-                          {EXAMPLE_OBSERVATIONS.slice(0, 4).map((ex) => (
+                      {/* Quick Benchmark Observation Row */}
+                      <div className="pt-2.5 border-t border-white/10 flex items-center justify-between gap-2">
+                        <span className="text-[10px] font-orbitron uppercase tracking-wider text-white/40 shrink-0 flex items-center gap-1">
+                          <Layers className="size-3 text-sky-400/70" />
+                          Quick:
+                        </span>
+
+                        <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar py-0.5 min-w-0">
+                          {[
+                            { label: "Burevi '20", ex: EXAMPLE_OBSERVATIONS[0] },
+                            { label: "Yaas '21", ex: EXAMPLE_OBSERVATIONS[1] },
+                            { label: "Sitrang '22", ex: EXAMPLE_OBSERVATIONS[4] },
+                            { label: "Midhili '23", ex: EXAMPLE_OBSERVATIONS[7] },
+                          ].map((item) => (
                             <button
-                              key={ex.id}
-                              onClick={() => handleLoadExample(ex, true)}
+                              key={item.ex.id}
+                              onClick={() => handleLoadExample(item.ex, true)}
                               disabled={loading}
-                              className="p-2.5 rounded-xl bg-white/5 hover:bg-sky-500/20 border border-white/10 hover:border-sky-500/40 text-left transition-all group flex flex-col justify-between min-w-0"
-                              title={`Load and analyze ${ex.name}`}
+                              className="px-2.5 py-1 rounded-lg bg-white/5 hover:bg-sky-500/20 border border-white/10 hover:border-sky-400/40 text-[11px] font-mono text-white/80 hover:text-sky-300 transition-all shrink-0 whitespace-nowrap"
+                              title={`Load ${item.ex.name} (~${item.ex.expectedWindKt} kt)`}
                             >
-                              <div className="flex items-center justify-between gap-1 w-full">
-                                <span className="text-xs font-orbitron font-bold text-white group-hover:text-sky-300 truncate">
-                                  {ex.cyclone}
-                                </span>
-                                <span className="text-[9px] font-mono text-white/50 shrink-0">
-                                  {ex.year}
-                                </span>
-                              </div>
-                              <div className="text-[10px] font-mono text-white/60 truncate mt-0.5">
-                                {ex.timestamp.split(" ")[0]}
-                              </div>
-                              <div className="flex items-center justify-between text-[10px] font-mono mt-1 pt-1 border-t border-white/5 w-full">
-                                <span className="text-sky-400 font-bold">~{ex.expectedWindKt} kt</span>
-                                <span className="text-white/40">{ex.sizeKb} KB</span>
-                              </div>
+                              {item.label}
                             </button>
                           ))}
                         </div>
                       </div>
                     </div>
                   ) : (
-                    <div className="p-4 sm:p-5 rounded-3xl bg-sky-950/30 backdrop-blur-xl space-y-3.5 shadow-xl min-w-0">
+                    <div className="p-4 sm:p-5 rounded-3xl bg-black/60 border border-white/10 backdrop-blur-xl space-y-3 shadow-xl min-w-0">
+                      {/* Top row: File details & quick actions */}
                       <div className="flex items-center justify-between gap-3">
-                        <div className="flex items-center gap-2.5 sm:gap-3 truncate min-w-0">
-                          <FileText className="size-4 sm:size-5 text-sky-400 shrink-0" />
-                          <span className="text-xs sm:text-sm xl:text-base font-bold text-white truncate">
-                            {file.name}
-                          </span>
+                        <div className="flex items-center gap-2.5 min-w-0">
+                          <div className="size-9 rounded-xl bg-sky-500/15 flex items-center justify-center text-sky-400 shrink-0">
+                            <FileText className="size-4" />
+                          </div>
+                          <div className="min-w-0">
+                            <div className="flex items-center gap-2">
+                              <span
+                                className="text-xs sm:text-sm font-bold text-white truncate max-w-[170px] sm:max-w-xs"
+                                title={file.name}
+                              >
+                                {file.name}
+                              </span>
+                              {activeExample && (
+                                <span className="px-1.5 py-0.5 rounded text-[9px] font-mono font-bold bg-sky-400/20 text-sky-300 shrink-0">
+                                  BENCHMARK
+                                </span>
+                              )}
+                            </div>
+                            <p className="text-[11px] font-mono text-white/50 mt-0.5">
+                              {(file.size / 1024).toFixed(1)} KB • NetCDF Raster
+                            </p>
+                          </div>
                         </div>
-                        <div className="flex items-center gap-1.5 shrink-0">
+
+                        <div className="flex items-center gap-1 shrink-0">
                           <button
                             onClick={() => setIsExamplesModalOpen(true)}
                             disabled={loading}
-                            className="px-2.5 py-1 rounded-lg text-xs font-mono text-sky-300 hover:bg-sky-500/20 transition-colors"
-                            title="Switch to another benchmark example"
+                            className="px-2.5 py-1 rounded-lg text-xs font-mono text-sky-300 hover:bg-sky-500/15 transition-colors"
+                            title="Switch to another benchmark sample"
                           >
-                            Switch Example
+                            Switch
                           </button>
                           <button
                             onClick={clearFile}
                             disabled={loading}
-                            className="px-2.5 sm:px-3 py-1 rounded-lg text-xs font-bold text-white/60 hover:text-rose-400 hover:bg-rose-500/10 transition-colors"
+                            className="p-1.5 rounded-lg text-white/40 hover:text-rose-400 hover:bg-rose-500/10 transition-colors"
+                            title="Clear file"
                           >
-                            Clear
+                            <X className="size-4" />
                           </button>
                         </div>
                       </div>
 
-                      <div className="flex items-center justify-between text-xs font-mono text-sky-300/80 pt-1 font-semibold">
-                        <span>{(file.size / 1024).toFixed(1)} KB</span>
-                        <span className="truncate ml-2">
-                          {prediction?.input?.cyclone_name
-                            ? `CYCLONE ${prediction.input.cyclone_name}${prediction.input.cyclone_id ? ` (${prediction.input.cyclone_id.slice(0, 4)})` : ""}`
-                            : file.name.includes("BUREVI")
-                              ? "CYCLONE BUREVI (2020)"
-                              : "NETCDF SATELLITE RASTER"}
-                        </span>
-                      </div>
-
-                      <button
-                        onClick={predictCyclone}
-                        disabled={loading}
-                        className="w-full mt-2 py-3 sm:py-3.5 rounded-2xl text-xs sm:text-sm xl:text-base font-orbitron font-black tracking-wider uppercase bg-white text-black hover:bg-sky-400 hover:text-black transition-all flex items-center justify-center gap-2 sm:gap-2.5 shadow-[0_0_30px_rgba(56,189,248,0.35)] min-w-0"
-                      >
-                        {loading ? (
-                          <>
-                            <RefreshCw className="size-4 animate-spin shrink-0" />
-                            <span className="truncate">ANALYZING SATELLITE TENSOR...</span>
-                          </>
-                        ) : (
-                          <>
-                            <Activity className="size-4 shrink-0" />
-                            <span className="truncate">RUN INTENSITY ESTIMATION</span>
-                          </>
-                        )}
-                      </button>
+                      {/* Estimation action button */}
+                      {loading ? (
+                        <div className="w-full py-3 rounded-2xl text-xs sm:text-sm font-orbitron font-bold tracking-wider uppercase bg-sky-500/15 border border-sky-400/30 text-sky-300 flex items-center justify-center gap-2.5 shadow-inner">
+                          <RefreshCw className="size-4 animate-spin text-sky-400 shrink-0" />
+                          <span className="truncate">ANALYZING SATELLITE TENSOR...</span>
+                        </div>
+                      ) : prediction ? (
+                        <div className="flex items-center gap-2 pt-0.5">
+                          <button
+                            onClick={predictCyclone}
+                            className="flex-1 py-2.5 rounded-xl text-xs font-orbitron font-bold tracking-wider uppercase bg-white/10 hover:bg-white/20 text-white transition-all flex items-center justify-center gap-2 border border-white/10"
+                          >
+                            <RefreshCw className="size-3.5 text-sky-400" />
+                            <span>RE-ANALYZE</span>
+                          </button>
+                          <button
+                            onClick={() => setIsExamplesModalOpen(true)}
+                            className="flex-1 py-2.5 rounded-xl text-xs font-orbitron font-bold tracking-wider uppercase bg-sky-500/20 hover:bg-sky-500/30 text-sky-300 transition-all flex items-center justify-center gap-2 border border-sky-400/30"
+                          >
+                            <Sparkles className="size-3.5" />
+                            <span>NEW BENCHMARK</span>
+                          </button>
+                        </div>
+                      ) : (
+                        <button
+                          onClick={predictCyclone}
+                          className="w-full py-3 sm:py-3.5 rounded-2xl text-xs sm:text-sm font-orbitron font-black tracking-wider uppercase bg-sky-400 hover:bg-sky-300 text-black transition-all flex items-center justify-center gap-2 shadow-[0_0_25px_rgba(56,189,248,0.35)] min-w-0"
+                        >
+                          <Activity className="size-4 shrink-0" />
+                          <span>RUN INTENSITY ESTIMATION</span>
+                        </button>
+                      )}
                     </div>
                   )}
                 </div>

@@ -103,6 +103,18 @@ def load_tb_from_netcdf(file_bytes):
     from an uploaded NetCDF file.
     """
 
+    # Check for Git LFS text pointer file (typically ~130 bytes starting with "version https://git-lfs")
+    if file_bytes.startswith(b"version https://git-lfs") or (len(file_bytes) < 300 and b"git-lfs" in file_bytes):
+        raise ValueError(
+            "The uploaded file is a Git LFS pointer text file (0.1 KB), not the binary NetCDF raster data. "
+            "Please ensure you download and upload the actual binary NetCDF file (~65 KB)."
+        )
+
+    if len(file_bytes) < 256:
+        raise ValueError(
+            f"The uploaded file is too small ({len(file_bytes)} bytes) to be a valid NetCDF satellite dataset."
+        )
+
     try:
         # The NetCDF4 backend cannot reliably identify uploaded file-like
         # objects, so give each upload a real temporary path and select the
